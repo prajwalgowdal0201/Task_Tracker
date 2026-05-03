@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21-Day Habit Analytics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #334155;
+            --empty: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Nav Tabs */
+        .tabs {
+            display: flex;
+            background: var(--bg-color);
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Header / General */
+        .header h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-sub {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 25px 0 15px 0;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* View Containers */
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Checklist Styles */
+        .checklist { display: flex; flex-direction: column; gap: 12px; }
+        .task {
+            background-color: var(--bg-color);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        .task:hover { border-color: var(--accent); }
+        .task input[type="checkbox"] { display: none; }
+        .custom-checkbox {
+            width: 24px; height: 24px;
+            border: 2px solid var(--text-muted);
+            border-radius: 6px; margin-right: 15px;
+            display: flex; justify-content: center; align-items: center;
+            flex-shrink: 0; transition: 0.2s;
+        }
+        .task input[type="checkbox"]:checked + .custom-checkbox {
+            background-color: var(--success); border-color: var(--success);
+        }
+        .task input[type="checkbox"]:checked + .custom-checkbox::after {
+            content: '✓'; color: white; font-weight: bold; font-size: 14px;
+        }
+        .task-title { font-size: 0.95rem; font-weight: 500; }
+        .task-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .task input[type="checkbox"]:checked ~ .task-content .task-title {
+            color: var(--text-muted); text-decoration: line-through;
+        }
+
+        /* Analytics Styles */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 5px; }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        .danger-text { color: var(--danger); }
+        .success-text { color: var(--success); }
+
+        /* History Grid */
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .day-box {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            background: var(--empty);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+            position: relative;
+        }
+        .day-box.complete { background: var(--success); color: white; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);}
+        .day-box.partial { background: var(--warning); color: white; }
+        .day-box.missed { background: var(--danger); color: white; }
+        .day-box.today { border: 2px solid var(--accent); }
+
+        .legend {
+            display: flex; justify-content: space-between;
+            font-size: 0.7rem; color: var(--text-muted); margin-top: 10px;
+        }
+        .legend span { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* Individual Consistency Bars */
+        .consistency-item { margin-bottom: 15px; }
+        .cons-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;}
+        .cons-bar-bg { width: 100%; height: 6px; background: var(--bg-color); border-radius: 10px; overflow: hidden;}
+        .cons-bar-fill { height: 100%; background: var(--accent); border-radius: 10px; transition: width 0.5s; }
+
+        .btn-reset {
+            width: 100%; padding: 12px; margin-top: 30px;
+            background: transparent; border: 1px solid var(--danger); color: var(--danger);
+            border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-reset:hover { background: rgba(239, 68, 68, 0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Habit Mastery</h1>
+            <div class="header-sub" id="date-display">Tracking Date</div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('today')">Today's Tasks</div>
+            <div class="tab" onclick="switchTab('analytics')">History & Stats</div>
+        </div>
+
+        <!-- VIEW 1: TODAY -->
+        <div id="view-today" class="view active">
+            <div id="task-container"></div>
+        </div>
+
+        <!-- VIEW 2: ANALYTICS -->
+        <div id="view-analytics" class="view">
+            
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-completion">0%</div>
+                    <div class="stat-label">Total Completion</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-gaps">0</div>
+                    <div class="stat-label">Days Missed</div>
+                </div>
+            </div>
+
+            <div class="section-title">21-Day Journey</div>
+            <div class="history-grid" id="history-grid">
+                <!-- JS will inject 21 boxes here -->
+            </div>
+            <div class="legend">
+                <span><div class="dot" style="background: var(--success)"></div> Perfect</span>
+                <span><div class="dot" style="background: var(--warning)"></div> Partial</span>
+                <span><div class="dot" style="background: var(--danger)"></div> Missed</span>
+                <span><div class="dot" style="background: var(--empty)"></div> Future</span>
+            </div>
+
+            <div class="section-title">Individual Consistency</div>
+            <div id="consistency-container">
+                <!-- JS will inject consistency bars here -->
+            </div>
+
+            <button class="btn-reset" onclick="resetApp()">Reset All Data & Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION & DATA STRUCTURE ---
+        const TOTAL_DAYS = 21;
+        const tasksDef = [
+            { id: 't1', group: '📚 Deep Work', title: 'Karnataka PSI Exam Prep', meta: '⏱️ 30 Mins' },
+            { id: 't2', group: '📚 Deep Work', title: 'NEET Exam Prep', meta: '⏱️ 1 Hour' },
+            { id: 't3', group: '📚 Deep Work', title: 'Career Advancement', meta: '⏱️ 1 Hour' },
+            { id: 't4', group: '🌅 Daily Foundation', title: 'Wake up at 6:00 AM', meta: 'Start the day strong' },
+            { id: 't5', group: '🌅 Daily Foundation', title: '8 Hours Sleep', meta: 'Recovery' },
+            { id: 't6', group: '🌅 Daily Foundation', title: 'Hydration', meta: 'Drink enough water' },
+            { id: 't7', group: '🌅 Daily Foundation', title: 'Exercise', meta: 'Physical movement' },
+            { id: 't8', group: '🌅 Daily Foundation', title: 'Clean Environment', meta: 'Tidy workspace/house' }
+        ];
+
+        let appData = {
+            startDate: null,
+            history: {} // Format: { "YYYY-MM-DD": { t1: true, t2: false... } }
+        };
+
+        // --- 2. UTILITY FUNCTIONS ---
+        // Get strict YYYY-MM-DD local date string to avoid timezone bugs
+        const getLocalDateString = (dateObj) => {
+            const tzOffset = (new Date()).getTimezoneOffset() * 60000; 
+            return (new Date(dateObj - tzOffset)).toISOString().split('T')[0];
+        };
+
+        const todayStr = getLocalDateString(new Date());
+
+        // --- 3. INITIALIZATION & STORAGE ---
+        const loadData = () => {
+            const saved = localStorage.getItem('habitTrackerData');
+            if (saved) {
+                appData = JSON.parse(saved);
+            } else {
+                // First time ever opening the app
+                appData.startDate = todayStr;
+                appData.history[todayStr] = {};
+                saveData();
+            }
+
+            // Ensure today exists in history
+            if (!appData.history[todayStr]) {
+                appData.history[todayStr] = {};
+                saveData();
+            }
+
+            document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            
+            renderTasks();
+            updateAnalytics();
+        };
+
+        const saveData = () => {
+            localStorage.setItem('habitTrackerData', JSON.stringify(appData));
+            updateAnalytics(); // Refresh stats whenever data changes
+        };
+
+        // --- 4. UI: TABS ---
+        const switchTab = (tabName) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            
+            if (tabName === 'today') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('view-today').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('view-analytics').classList.add('active');
+            }
+        };
+
+        // --- 5. UI: RENDER CHECKLIST ---
+        const renderTasks = () => {
+            const container = document.getElementById('task-container');
+            container.innerHTML = '';
+            
+            let currentGroup = '';
+
+            tasksDef.forEach(task => {
+                // Add Section Titles
+                if (task.group !== currentGroup) {
+                    currentGroup = task.group;
+                    const title = document.createElement('div');
+                    title.className = 'section-title';
+                    title.textContent = currentGroup;
+                    container.appendChild(title);
+                }
+
+                // Check state for today
+                const isChecked = appData.history[todayStr][task.id] === true;
+
+                // Create Task UI
+                const label = document.createElement('label');
+                label.className = 'task';
+                label.innerHTML = `
+                    <input type="checkbox" id="${task.id}" ${isChecked ? 'checked' : ''}>
+                    <div class="custom-checkbox"></div>
+                    <div class="task-content">
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-meta">${task.meta}</div>
+                    </div>
+                `;
+
+                // Handle Checkbox Change (Auto-save)
+                const checkbox = label.querySelector('input');
+                checkbox.addEventListener('change', (e) => {
+                    appData.history[todayStr][task.id] = e.target.checked;
+                    saveData();
+                });
+
+                container.appendChild(label);
+            });
+        };
+
+        // --- 6. UI: ANALYTICS & STATS ---
+        const updateAnalytics = () => {
+            const startDateObj = new Date(appData.startDate);
+            const totalTasks = tasksDef.length;
+            
+            let daysElapsed = Math.floor((new Date() - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
+            if(daysElapsed > TOTAL_DAYS) daysElapsed = TOTAL_DAYS; // Cap at 21 for stats
+
+            let totalPossibleCompleted = daysElapsed * totalTasks;
+            let actualCompleted = 0;
+            let missedDaysCount = 0;
+
+            const historyGrid = document.getElementById('history-grid');
+            historyGrid.innerHTML = '';
+
+            // Map to store completion count per task
+            let taskCompletions = {};
+            tasksDef.forEach(t => taskCompletions[t.id] = 0);
+
+            // Generate 21 Days Logic
+            for (let i = 0; i < TOTAL_DAYS; i++) {
+                let targetDate = new Date(startDateObj);
+                targetDate.setDate(startDateObj.getDate() + i);
+                let targetStr = getLocalDateString(targetDate);
+                
+                const box = document.createElement('div');
+                box.className = 'day-box';
+                box.textContent = i + 1;
+
+                if (targetStr > todayStr) {
+                    // Future day
+                    historyGrid.appendChild(box);
+                    continue;
+                }
+
+                // It's a past day or today
+                const dayData = appData.history[targetStr];
+                
+                if (targetStr === todayStr) box.classList.add('today');
+
+                if (!dayData) {
+                    // Gap detected! User didn't log in this day.
+                    box.classList.add('missed');
+                    missedDaysCount++;
+                } else {
+                    let completedTasksThisDay = 0;
+                    tasksDef.forEach(t => {
+                        if (dayData[t.id]) {
+                            completedTasksThisDay++;
+                            taskCompletions[t.id]++;
+                            actualCompleted++;
+                        }
+                    });
+
+                    if (completedTasksThisDay === totalTasks) {
+                        box.classList.add('complete');
+                    } else if (completedTasksThisDay === 0) {
+                        box.classList.add('missed');
+                        missedDaysCount++;
+                    } else {
+                        box.classList.add('partial');
+                    }
+                }
+                historyGrid.appendChild(box);
+            }
+
+            // Update Top Level Stats
+            const overallPercent = totalPossibleCompleted === 0 ? 0 : Math.round((actualCompleted / totalPossibleCompleted) * 100);
+            document.getElementById('stat-completion').textContent = `${overallPercent}%`;
+            
+            const gapsEl = document.getElementById('stat-gaps');
+            gapsEl.textContent = missedDaysCount;
+            if(missedDaysCount > 0) gapsEl.className = 'stat-value danger-text';
+            else gapsEl.className = 'stat-value success-text';
+
+            // Render Individual Consistency Bars
+            const consContainer = document.getElementById('consistency-container');
+            consContainer.innerHTML = '';
+            
+            tasksDef.forEach(task => {
+                const percent = daysElapsed === 0 ? 0 : Math.round((taskCompletions[task.id] / daysElapsed) * 100);
+                
+                const div = document.createElement('div');
+                div.className = 'consistency-item';
+                
+                // Color code based on performance
+                let barColor = 'var(--accent)';
+                if (percent < 50) barColor = 'var(--danger)';
+                else if (percent >= 85) barColor = 'var(--success)';
+
+                div.innerHTML = `
+                    <div class="cons-header">
+                        <span>${task.title}</span>
+                        <span>${percent}%</span>
+                    </div>
+                    <div class="cons-bar-bg">
+                        <div class="cons-bar-fill" style="width: ${percent}%; background: ${barColor}"></div>
+                    </div>
+                `;
+                consContainer.appendChild(div);
+            });
+        };
+
+        const resetApp = () => {
+            if(confirm("Are you sure? This will delete your 21-day history and start you over at Day 1.")) {
+                localStorage.removeItem('habitTrackerData');
+                location.reload();
+            }
+        };
+
+        // Run on start
+        loadData();
+
+    </script>
+</body>
+</html>
